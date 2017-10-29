@@ -8,6 +8,11 @@ import java.util.Map;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,17 +41,19 @@ public class JasperController extends HttpServlet {
         
         try (PrintWriter out = response.getWriter()) {
             
+            List<DevolucionTDC> dataSource = this.getDataSourceTDC(200);
             
+            this.export(dataSource, this.getDateTime());
             
             out.print("working");
             
+        } catch (JRException ex) {
+            Logger.getLogger(JasperController.class.getName()).log(Level.SEVERE, null, ex);
         }
         
     }
     
     private void export(List<DevolucionTDC> tdcDs, String dateTime) throws JRException {
-        
-        List<String> fileList = new ArrayList<>();
         
         JRBeanCollectionDataSource dataSourcePDF = new JRBeanCollectionDataSource(tdcDs);
         
@@ -60,8 +67,7 @@ public class JasperController extends HttpServlet {
         
         JasperPrint pdfPrint = this.fillJasperPrint(template, parameters, dataSourcePDF);
         
-        if (this.exportPDF(pdfPrint, file)) 
-            System.out.println("Archivo generado");
+        if (this.exportPDF(pdfPrint, file)) System.out.println("Archivo generado");
         
     }
     
@@ -92,6 +98,37 @@ public class JasperController extends HttpServlet {
             return false;
         }
         
+    }
+    
+    private List<DevolucionTDC> getDataSourceTDC(int total) {
+        
+        ArrayList<DevolucionTDC> tdcDs = new ArrayList<DevolucionTDC>();
+
+        for (int i = 0; i < total; i++) {
+            
+            DevolucionTDC devolucion = new DevolucionTDC();
+            
+            devolucion.setNumeroTarjeta("1234-5678-9012-345" + i);
+            devolucion.setAfiliacion("724830" + i);
+            devolucion.setFechaTransaccion(new Date());
+            devolucion.setCodigoAutorizacion("00925" + i);
+            devolucion.setImporteOriginal(new BigDecimal(1));
+            devolucion.setImporteDevolver(new BigDecimal(1));
+            
+            devolucion.setFormaPago("TDC");
+            devolucion.setTotal(new BigDecimal(1));
+            
+            tdcDs.add(devolucion);
+            
+        }
+        
+        System.out.println("\nDataSource [TDC]: " + tdcDs);
+        
+        return tdcDs;
+    }
+    
+    private String getDateTime() {
+        return new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss").format(new Date());
     }
     
     @Override
